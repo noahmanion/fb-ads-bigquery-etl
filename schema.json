@@ -1,0 +1,34 @@
+[
+  { "name": "campaign_name",                             "type": "STRING",  "mode": "REQUIRED" },
+  { "name": "ad_name",                                   "type": "STRING",  "mode": "REQUIRED" },
+  { "name": "publisher_platform",                        "type": "STRING",  "mode": "REQUIRED" },
+  { "name": "impressions",                               "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "clicks",                                    "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "spend",                                     "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "date_start",                                "type": "DATE",    "mode": "REQUIRED" },
+  { "name": "date_stop",                                 "type": "DATE",    "mode": "REQUIRED" },
+
+  { "name": "video_continuous_2_sec_watched_actions",     "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "video_30_sec_watched_actions",               "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "video_avg_time_watched_actions",             "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "video_p25_watched_actions",                  "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "video_p50_watched_actions",                  "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "video_p75_watched_actions",                  "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "video_p100_watched_actions",                 "type": "INTEGER", "mode": "NULLABLE" },
+
+  { "name": "offsite_conversion_fb_pixel_submit_application", "type": "INTEGER", "mode": "NULLABLE" },
+  { "name": "offsite_conversion_fb_pixel_lead",               "type": "INTEGER", "mode": "NULLABLE" },
+
+  { "name": "page_engagement",                            "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "post_engagement",                            "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "video_view",                                 "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "landing_page_view",                          "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "omni_landing_page_view",                     "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "post_reaction",                              "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "link_click",                                 "type": "FLOAT",   "mode": "NULLABLE" },
+
+  { "name": "onsite_web_lead",                            "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "lead",                                       "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "offsite_conversion_fb_pixel_custom",         "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "comment",                                    "type": "FLOAT",   "mode": "NULLABLE" }
+]

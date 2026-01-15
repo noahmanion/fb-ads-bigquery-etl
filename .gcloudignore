@@ -1,0 +1,62 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# when deploying Cloud Functions
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+env.yaml
+
+# CSV data files
+*.csv
+
+# Log files
+*.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test files
+test_*.py
+*_test.py
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Local scripts and notes
+commandline.txt
+existing.txt
+notes.txt

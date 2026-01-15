@@ -1,0 +1,33 @@
+# Cloud Build configuration for automated deployment
+# This file is used for CI/CD deployment of the Cloud Function
+#
+# Usage:
+#   gcloud builds submit --config=cloudbuild.yaml
+#
+# Or set up a trigger to auto-deploy on git push
+
+steps:
+  - id: Deploy-Function
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud functions deploy fetchFbAdsToBigQuery \
+          --gen2 \
+          --region=us-central1 \
+          --runtime=python313 \
+          --entry-point=main \
+          --source=. \
+          --trigger-topic=fb-ads-topic \
+          --set-env-vars=GCP_PROJECT=${PROJECT_ID},BQ_TABLE=ad_analytics.ad_data \
+          --timeout=540 \
+          --memory=512MB \
+          --max-instances=1 \
+          --service-account=fb-ads-etl-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+          --quiet
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 600s
