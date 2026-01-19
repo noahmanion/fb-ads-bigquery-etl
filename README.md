@@ -165,7 +165,10 @@ FB_TOKEN=your_facebook_access_token
 FB_APP_ID=your_facebook_app_id
 GCP_PROJECT=your-gcp-project-id
 BQ_TABLE=your_dataset.ad_data
+DRY_RUN=false  # Set to true to test without BigQuery insertion
 ```
+
+The script automatically loads the `.env` file using `python-dotenv`.
 
 #### 3.3 Update Account IDs in Scripts
 

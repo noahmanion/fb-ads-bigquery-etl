@@ -64,6 +64,46 @@ This guide focuses on **Cloud Functions** (Option 1).
 - Test the pipeline locally first
 - Have your Facebook tokens in Secret Manager
 
+### Required APIs
+
+Ensure these APIs are enabled before deploying:
+
+```bash
+gcloud services enable \
+  cloudfunctions.googleapis.com \
+  cloudbuild.googleapis.com \
+  eventarc.googleapis.com \
+  pubsub.googleapis.com \
+  run.googleapis.com \
+  --project=YOUR_PROJECT_ID
+```
+
+### Required IAM Permissions for Cloud Build
+
+The Cloud Build service account needs these roles to deploy Cloud Functions:
+
+```bash
+# Get your project number
+PROJECT_NUMBER=$(gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)")
+
+# Grant Cloud Functions Developer role
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudfunctions.developer"
+
+# Grant Service Account User role
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+# Grant Cloud Build Service Account role
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder"
+```
+
+Wait a minute for IAM changes to propagate before deploying.
+
 ### Method 1: Using gcloud CLI (Recommended)
 
 #### 1. Prepare Deployment
@@ -527,6 +567,42 @@ gcloud secrets add-iam-policy-binding fb-marketing-token \
   --member="serviceAccount:$SERVICE_ACCOUNT" \
   --role="roles/secretmanager.secretAccessor"
 ```
+
+### Cloud Build Permission Errors
+
+**Problem**: "Could not build the function due to missing permissions" or "serviceAccounts cannot be accessed by IAM"
+
+**Solution:**
+```bash
+# Get project number
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+# Grant required roles to Cloud Build service account
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudfunctions.developer"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder"
+```
+
+Wait 1-2 minutes for IAM propagation, then retry deployment.
+
+### Eventarc API Not Enabled
+
+**Problem**: "Eventarc API has not been used in project"
+
+**Solution:**
+```bash
+gcloud services enable eventarc.googleapis.com --project=$PROJECT_ID
+```
+
+Wait a few minutes for the API to fully enable, then retry deployment.
 
 ### Cold Starts
 

@@ -78,10 +78,14 @@ gcloud services enable \
   cloudfunctions.googleapis.com \
   cloudscheduler.googleapis.com \
   pubsub.googleapis.com \
-  cloudbuild.googleapis.com
+  cloudbuild.googleapis.com \
+  eventarc.googleapis.com \
+  run.googleapis.com
 ```
 
 This takes 2-3 minutes to complete.
+
+**Note**: The `eventarc.googleapis.com` API is required for Cloud Functions Gen2 triggers. If you get an "Eventarc API has not been used" error during deployment, ensure this API is enabled and wait a few minutes for propagation.
 
 ## 3. Create BigQuery Dataset
 
@@ -277,6 +281,28 @@ gcloud secrets add-iam-policy-binding fb-marketing-token \
   --role="roles/secretmanager.secretVersionAdder"
 ```
 
+### Grant Cloud Build Permissions (for deployment)
+
+The Cloud Build service account needs permissions to deploy Cloud Functions:
+
+```bash
+# Get project number
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+# Grant required roles
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudfunctions.developer"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder"
+```
+
 ### Create Service Account Key (for local testing)
 
 ```bash
@@ -302,8 +328,12 @@ gcloud services list --enabled | grep -E "bigquery|secret|function"
 Expected output:
 ```
 bigquery.googleapis.com
-secretmanager.googleapis.com
+cloudbuild.googleapis.com
 cloudfunctions.googleapis.com
+eventarc.googleapis.com
+pubsub.googleapis.com
+run.googleapis.com
+secretmanager.googleapis.com
 ```
 
 ### Check BigQuery Dataset and Table
@@ -363,7 +393,10 @@ gcloud services enable \
   secretmanager.googleapis.com \
   cloudfunctions.googleapis.com \
   cloudscheduler.googleapis.com \
-  pubsub.googleapis.com
+  pubsub.googleapis.com \
+  cloudbuild.googleapis.com \
+  eventarc.googleapis.com \
+  run.googleapis.com
 
 # Create BigQuery dataset
 echo "Creating BigQuery dataset..."
@@ -415,6 +448,22 @@ done
 gcloud secrets add-iam-policy-binding fb-marketing-token \
   --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
   --role="roles/secretmanager.secretVersionAdder"
+
+# Grant Cloud Build permissions for deployment
+echo "Granting Cloud Build permissions..."
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudfunctions.developer"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder"
 
 echo "✅ Setup complete!"
 echo ""

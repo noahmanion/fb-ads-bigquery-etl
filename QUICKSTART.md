@@ -51,9 +51,12 @@ FB_TOKEN=your_facebook_access_token
 FB_APP_ID=your_facebook_app_id
 GCP_PROJECT=your-gcp-project-id
 BQ_TABLE=your_dataset.ad_data
+DRY_RUN=false  # Set to true to test without inserting to BigQuery
 ```
 
 Ask your team lead for these values if you don't have them.
+
+**Note**: The script automatically loads the `.env` file using `python-dotenv`, so you don't need to export these variables manually.
 
 ### 5. Update Account IDs
 
@@ -82,12 +85,14 @@ gcloud auth application-default login
 ### 7. Test the Pipeline
 
 ```bash
-# Run a dry run (doesn't insert to BigQuery)
-DRY_RUN=true python main.py
+# Set DRY_RUN=true in .env file first, then:
+python main.py
 
-# If that works, run for real
+# If that works, set DRY_RUN=false in .env and run for real:
 python main.py
 ```
+
+**Tip**: The script loads `.env` automatically, so just edit the file to change settings.
 
 ## Common Tasks
 

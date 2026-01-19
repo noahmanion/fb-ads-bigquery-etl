@@ -19,11 +19,29 @@ import requests
 import json
 import csv
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from google.cloud import bigquery, secretmanager
 
-# Initialize clients
-bq_client = bigquery.Client()
-sm = secretmanager.SecretManagerServiceClient()
+# Load environment variables from .env file
+load_dotenv()
+
+# Lazy-initialized clients (to avoid gRPC timeout warnings when not used)
+_bq_client = None
+_sm_client = None
+
+
+def get_bq_client():
+    global _bq_client
+    if _bq_client is None:
+        _bq_client = bigquery.Client()
+    return _bq_client
+
+
+def get_sm_client():
+    global _sm_client
+    if _sm_client is None:
+        _sm_client = secretmanager.SecretManagerServiceClient()
+    return _sm_client
 
 # =============================================================================
 # CONFIGURATION - Update these for your client
@@ -33,12 +51,11 @@ sm = secretmanager.SecretManagerServiceClient()
 # Example URL: https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=1234567890
 # The number after 'act=' is your account ID
 ACCOUNT_IDS = [
-    "1406536489957393",  # Replace with your account IDs
-    "950565439763291"
+    "237000887"
 ]
 
 # GCP Configuration
-GCP_PROJECT = os.getenv("GCP_PROJECT", "your-project-id")
+GCP_PROJECT = os.getenv("GCP_PROJECT", "chi-fire")
 
 # Secret Manager secret names
 TOKEN_SECRET_NAME = "fb-marketing-token"
@@ -54,7 +71,7 @@ FB_APP_SECRET_SECRET = "fb-app-secret"
 def get_secret(secret_id: str) -> str:
     """Fetch a secret from Secret Manager."""
     name = f"projects/{GCP_PROJECT}/secrets/{secret_id}/versions/latest"
-    response = sm.access_secret_version(request={"name": name})
+    response = get_sm_client().access_secret_version(request={"name": name})
     return response.payload.data.decode("UTF-8")
 
 
@@ -64,7 +81,7 @@ def set_secret(secret_id: str, value: str):
     Note: The secret must already exist in Secret Manager.
     """
     parent = f"projects/{GCP_PROJECT}/secrets/{secret_id}"
-    sm.add_secret_version(
+    get_sm_client().add_secret_version(
         request={
             "parent": parent,
             "payload": {"data": value.encode("UTF-8")}
@@ -423,7 +440,7 @@ def ensure_bq_schema(table_id: str, rows: list[dict]):
 
 def insert_to_bq(rows, table_id):
     """Insert rows into BigQuery table."""
-    errors = bq_client.insert_rows_json(table_id, rows)
+    errors = get_bq_client().insert_rows_json(table_id, rows)
     if errors:
         raise RuntimeError(f"BigQuery insert errors: {errors}")
     else:

@@ -54,6 +54,9 @@ Collect this information before starting:
   - [ ] Cloud Functions API
   - [ ] Cloud Scheduler API
   - [ ] Pub/Sub API
+  - [ ] Cloud Build API
+  - [ ] Eventarc API
+  - [ ] Cloud Run API
 
 - [ ] Create BigQuery Dataset
   - [ ] Dataset ID: _______________
@@ -78,6 +81,11 @@ Collect this information before starting:
   - [ ] Granted Secret Manager Secret Accessor role
   - [ ] Granted Secret Manager Secret Version Adder role
 
+- [ ] Grant Cloud Build Service Account Permissions (for deployment)
+  - [ ] Granted Cloud Functions Developer role
+  - [ ] Granted Service Account User role
+  - [ ] Granted Cloud Build Service Account role
+
 ## Local Setup
 
 - [ ] Clone/download project code
@@ -93,6 +101,7 @@ Collect this information before starting:
   - [ ] Set `FB_APP_ID`
   - [ ] Set `GCP_PROJECT`
   - [ ] Set `BQ_TABLE`
+  - [ ] Set `DRY_RUN=true` (for initial testing)
 
 - [ ] Update `ACCOUNT_IDS` in scripts
   - [ ] Updated `main.py` line 23
@@ -105,7 +114,7 @@ Collect this information before starting:
 
 ## Testing
 
-- [ ] Test with dry run: `DRY_RUN=true python main.py`
+- [ ] Test with dry run (set `DRY_RUN=true` in `.env`, then run `python main.py`)
   - [ ] No errors
   - [ ] Token validated successfully
   - [ ] Data fetched successfully
