@@ -37,8 +37,7 @@ FB_TOKEN = os.getenv("FB_TOKEN")
 
 # Facebook Ad Account IDs (same as in main.py)
 ACCOUNT_IDS = [
-    "1406536489957393",  # Replace with your account IDs
-    "950565439763291"
+    "237000887"
 ]
 
 
@@ -79,18 +78,26 @@ def fetch_insights_for_date_range(token, account_id, start_date, end_date):
         "level": "ad",
         "breakdowns": json.dumps(["publisher_platform"]),
         "time_increment": "1",
+        "limit": "500",
         "date_start": start_date,
         "date_stop": end_date
     }
 
     all_data = []
+    seen_keys = set()
     max_retries = 3
     timeout = 30
+    page_num = 1
+    max_pages = 20  # Safety limit
 
     while url:
+        if page_num > max_pages:
+            print(f"    ⚠️ Reached max page limit ({max_pages}), stopping pagination")
+            break
+
         for attempt in range(max_retries):
             try:
-                print(f"    Fetching {start_date} to {end_date} (attempt {attempt + 1}/{max_retries})")
+                print(f"    Fetching {start_date} to {end_date} (page {page_num}, attempt {attempt + 1}/{max_retries})")
                 resp = requests.get(url, params=params, timeout=timeout)
                 resp.raise_for_status()
                 result = resp.json()
@@ -102,12 +109,29 @@ def fetch_insights_for_date_range(token, account_id, start_date, end_date):
                     raise RuntimeError(f"Facebook API Error [{error_code}]: {error_msg}")
 
                 page = result.get("data", [])
-                if page:
-                    all_data.extend(page)
-                    print(f"    ✅ Fetched {len(page)} records")
+                if not page:
+                    url = None
+                    break
+
+                # Detect duplicate records to stop infinite pagination
+                new_records = 0
+                for rec in page:
+                    key = f"{rec.get('campaign_name')}|{rec.get('ad_name')}|{rec.get('date_start')}|{rec.get('publisher_platform')}"
+                    if key not in seen_keys:
+                        seen_keys.add(key)
+                        all_data.append(rec)
+                        new_records += 1
+
+                print(f"    ✅ Fetched {len(page)} records, {new_records} new (total: {len(all_data)})")
+
+                if new_records == 0:
+                    print(f"    ⚠️ All records on this page are duplicates, stopping pagination")
+                    url = None
+                    break
 
                 url = result.get("paging", {}).get("next")
                 params = {}
+                page_num += 1
                 break
 
             except requests.RequestException as e:

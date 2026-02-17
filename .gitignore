@@ -1,6 +1,7 @@
 # Environment and secrets
 .env
 env.yaml
+secrets.txt
 
 # CSV exports (data files)
 *.csv
@@ -39,3 +40,6 @@ ENV/
 dist/
 build/
 *.egg-info/
+
+backfill.py
+load_csv_to_bq.py

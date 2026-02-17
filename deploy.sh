@@ -7,12 +7,12 @@
 set -e
 
 # Configuration - UPDATE THESE FOR YOUR CLIENT
-PROJECT_ID="your-gcp-project-id"
+PROJECT_ID="chi-fire"
 REGION="us-central1"
 FUNCTION_NAME="fetchFbAdsToBigQuery"
-DATASET_ID="ad_analytics"
-TABLE_ID="ad_data"
-SERVICE_ACCOUNT="fb-ads-etl-sa"
+DATASET_ID="ad_data"
+TABLE_ID="data"
+SERVICE_ACCOUNT="837056475076-compute@developer.gserviceaccount.com"
 
 echo "======================================"
 echo "Facebook Ads ETL - Cloud Function Deploy"
@@ -47,11 +47,11 @@ gcloud functions deploy $FUNCTION_NAME \
   --entry-point=main \
   --source=. \
   --trigger-topic=fb-ads-topic \
-  --set-env-vars=GCP_PROJECT=$PROJECT_ID,BQ_TABLE=$DATASET_ID.$TABLE_ID \
+  --set-env-vars=GCP_PROJECT=$PROJECT_ID,BQ_TABLE=$PROJECT_ID.$DATASET_ID.$TABLE_ID \
   --timeout=540 \
   --memory=512MB \
   --max-instances=1 \
-  --service-account=$SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com
+  --service-account=$SERVICE_ACCOUNT
 
 echo ""
 echo "======================================"

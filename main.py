@@ -107,7 +107,14 @@ def debug_token(token: str, app_id: str, app_secret: str) -> dict:
 
     try:
         resp = requests.get(url, params=params, timeout=10)
-        resp.raise_for_status()
+        if not resp.ok:
+            error_detail = resp.text[:500]
+            return {
+                "is_valid": False,
+                "expires_at": 0,
+                "error": f"HTTP {resp.status_code}: {error_detail}",
+                "http_error": True
+            }
         data = resp.json().get("data", {})
 
         return {
@@ -123,8 +130,35 @@ def debug_token(token: str, app_id: str, app_secret: str) -> dict:
         return {
             "is_valid": False,
             "expires_at": 0,
-            "error": str(e)
+            "error": str(e),
+            "http_error": True
         }
+
+
+def test_token_directly(token: str, account_id: str) -> bool:
+    """
+    Test a token by making a lightweight Facebook API call.
+    Fallback for when debug_token fails (e.g. system user tokens from Business Manager).
+    """
+    url = f"https://graph.facebook.com/v22.0/act_{account_id}"
+    params = {
+        "access_token": token,
+        "fields": "name"
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        if not resp.ok:
+            error_detail = resp.text[:500]
+            print(f"  ❌ Direct token test failed (HTTP {resp.status_code}): {error_detail}")
+            return False
+        data = resp.json()
+        if "name" in data:
+            print(f"  ✅ Token verified via direct API call (account: {data['name']})")
+            return True
+        return False
+    except Exception as e:
+        print(f"  ❌ Direct token test failed: {e}")
+        return False
 
 
 def refresh_long_lived_token(current_token: str, app_id: str, app_secret: str) -> tuple[str, int]:
@@ -189,6 +223,15 @@ def get_valid_token() -> str:
     token_info = debug_token(current_token, app_id, app_secret)
 
     if not token_info["is_valid"]:
+        # If debug_token failed due to HTTP error (not a proper invalidity response),
+        # fall back to testing the token directly against the API.
+        # This handles system user tokens from Business Manager which may not be
+        # debuggable with the app_id|app_secret access token format.
+        if token_info.get("http_error"):
+            print(f"⚠️ debug_token endpoint failed ({token_info.get('error')}), testing token directly...")
+            if test_token_directly(current_token, ACCOUNT_IDS[0]):
+                print("✅ Token is valid (verified via direct API call, treating as never-expiring)")
+                return current_token
         error_msg = token_info.get("error", "Unknown error")
         raise RuntimeError(
             f"❌ Facebook token is invalid: {error_msg}\n"
@@ -288,16 +331,24 @@ def fetch_all_insights(token, account_id):
         "level": "ad",
         "breakdowns": json.dumps(["publisher_platform"]),
         "time_increment": "1",
+        "limit": "500",
         "date_preset": "yesterday"
     }
     all_data = []
+    seen_keys = set()
     max_retries = 3
     timeout = 30
+    page_num = 1
+    max_pages = 20  # Safety limit
 
     while url:
+        if page_num > max_pages:
+            print(f"  ⚠️ Reached max page limit ({max_pages}), stopping pagination")
+            break
+
         for attempt in range(max_retries):
             try:
-                print(f"  Fetching data from account {account_id} (attempt {attempt + 1}/{max_retries})")
+                print(f"  Fetching data from account {account_id} (page {page_num}, attempt {attempt + 1}/{max_retries})")
                 resp = requests.get(url, params=params, timeout=timeout)
                 resp.raise_for_status()
                 result = resp.json()
@@ -314,13 +365,28 @@ def fetch_all_insights(token, account_id):
                 page = result.get("data", [])
                 if not page:
                     print("  No data returned from API")
+                    url = None
                     break
 
-                all_data.extend(page)
-                print(f"  ✅ Successfully fetched {len(page)} records")
+                # Detect duplicate records to stop infinite pagination
+                new_records = 0
+                for rec in page:
+                    key = f"{rec.get('campaign_name')}|{rec.get('ad_name')}|{rec.get('date_start')}|{rec.get('publisher_platform')}"
+                    if key not in seen_keys:
+                        seen_keys.add(key)
+                        all_data.append(rec)
+                        new_records += 1
+
+                print(f"  ✅ Fetched {len(page)} records, {new_records} new (total: {len(all_data)})")
+
+                if new_records == 0:
+                    print(f"  ⚠️ All records on this page are duplicates, stopping pagination")
+                    url = None
+                    break
 
                 url = result.get("paging", {}).get("next")
                 params = {}
+                page_num += 1
                 break
 
             except requests.Timeout:
